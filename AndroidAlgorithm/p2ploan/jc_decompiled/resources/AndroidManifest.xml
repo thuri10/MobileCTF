@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="cn.forensix.dk2023"
+    platformBuildVersionCode="31"
+    platformBuildVersionName="12"
+    android:versionCode="230415000"
+    android:versionName="2.9.3"
+    android:compileSdkVersion="31"
+    android:compileSdkVersionCodename="12">
+    <uses-sdk
+        android:minSdkVersion="21"
+        android:targetSdkVersion="31"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application
+        android:theme="@style/Theme.Daikuan"
+        android:label="@string/app_name"
+        android:icon="@drawable/ic_launcher_plus"
+        android:name="com.stub.StubApp"
+        android:allowBackup="true"
+        android:supportsRtl="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:appComponentFactory="androidx.core.app.CoreComponentFactory">
+        <activity
+            android:theme="@style/Theme.Daikuan.NoActionBar"
+            android:name="cn.forensix.daikuan.ui.SplashActivity"
+            android:exported="true"
+            android:screenOrientation="sensorPortrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="cn.forensix.daikuan.ui.UserInfoActivity"
+            android:exported="true"
+            android:screenOrientation="sensorPortrait"/>
+        <activity
+            android:name="cn.forensix.daikuan.ui.NumberActivity"
+            android:exported="true"
+            android:screenOrientation="sensorPortrait"/>
+        <activity
+            android:name="cn.forensix.daikuan.ui.ResultActivity"
+            android:exported="true"
+            android:screenOrientation="sensorPortrait"/>
+        <activity
+            android:label="@string/app_name"
+            android:name="cn.forensix.daikuan.ui.login.LoginActivity"
+            android:exported="true"
+            android:screenOrientation="sensorPortrait"/>
+    </application>
+</manifest>

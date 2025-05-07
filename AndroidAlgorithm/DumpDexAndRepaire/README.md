@@ -1,280 +1,228 @@
+
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
 
+<!-- code_chunk_output -->
 
-<!--code_chunk_output -->
-
-
-- [new tool: Fart12 custom automatic batch repair script released] (#new toolfart12 Custom Automatic Batch Repair script released) - [Fart12 fearless environment detection reasons] - [one line command automatically repairs alldex] - (#one line commands automatically repaired alldex) - (example demonstrates complete decoupling repair process) (#example showing complete decoupage repair procedure) - - [first out of the whole shell] - - (first off the entire shell) - / (# again off the shell extract) - &#reassembly of the shells) -
-
+- [Disadvantages of the old Fart12 customized jadx](#Disadvantages of the old fart12 customized jadx)
+- [New tool: Fart12 customized automatic batch repair script released](#New tool fart12 customized automatic batch repair script released)
+  - [The reason why Fart12 is not afraid of environmental testing](#fart12The reason why fart12 is not afraid of environmental testing)
+  - [One line command automatically repairs all dex](#One line command automatically repairs all dex)
+- [Example Demonstration of Complete Shelling and Repair Process](#Example Demonstration of Complete Shelling and Repair Process)
+  - [Remove the whole shell first](#Remove the whole shell first)
+  - [Re-extract the shell](#Re-extract the shell)
+  - [Reorganize dex](#Reorganize dex)
+  - [Reorganize dex and use FartFix on mobile phones](#Reorganize dex and use fartfix on mobile phones)
+- [Bypassing the shell detection mechanism](#Bypassing the shell detection mechanism)
 
 <!-- /code_chunk_output -->
 
 
+### Disadvantages of the old Fart12 customized version of jadx
 
+The previously launched Fart12 customized version of jadx can automatically reconstruct and merge the dex file removed by Fart12 with the function body bin file obtained during the active call process, repair and merge them into a new dex.
 
+![](pic/01.png)
 
+After the repair, the size of the dex file will also increase, and the function body will also change from the original nop to the real function logic code body.
 
-### Old version of Fart12 custom version of jadex shortcomings
+![](pic/02.png)
 
+Although the tool is easy to use, it still has some limitations. For example:
 
-The previously launched Fart12 custom version of jadx can automatically reconstruct and merge the dex files from Fart 12 with the function body bin files obtained during the active call, repair and merge into a new dex.
+1. Only a single dex file can be repaired at a time, which is inefficient;
+2. There is also the issue of repair timing. When using dex dumped from different unpacking points to repair, some repairs may fail.
 
+Regarding the second point above, let me explain in detail. Theoretically speaking, in the process of unpacking the second-generation function body filling shell, the overall dex dumped at any time should have the same content, or the dex dumped at a later time should be more complete than the one dumped at an earlier time, because the decryption and restoration of some function bodies will be triggered during the running of the App.
 
-[] (pic/01.png)
+However, sometimes, when using the whole dex dumped at a delayed point to repair, the repair may fail. This is because some shells damage the dex structure in memory after the whole load is completed to resist some whole dump tools. For example, damaging the dex file header can cause reverse tools such as jadx and geb to not recognize the dex even after it is removed. It can also resist tools such as frida-dexdump to traverse and search the dex file header in memory. The relevant code is as follows:
 
+```ts
+/* https://github.com/hluwa/frida-dexdump/blob/d4b7d24a8ce0dada17fb1ce9849a8c1cffcb2cae/agent/src/search.ts#L115 */
 
-After repairing, the size of thedex file will be increased, and the function body will be converted from the originalnop to the true function logic code.
-
-
-[] (pic/02.png)
-
-
-The tool is useful, but there are some limitations.比如：
-
-
-2. There is also a problem of fixing time, using different decal dump points to fix the decal, some of which may fail to fix.
-
-
-On the second point above, let me explain.Theoretically, in the second generation function filling shell decoupling process, in fact, no matter which time point dump down the overalldex, the content should be the same, or in some lagging down the time dump of thedex, should be more complete than earlier period dump, because in the run-up of the app will trigger some function of decryption and restoration.
-
-
-Sometimes, however, when repairing the total dex from the late point dump, there is a repair failure, which is because some shells, after the overall load is completed, have done some damage to the dex structure in the memory, to combat some of the total dump tools.For example, the destruction of the file header of thedex, it can cause even after the decommissioning of thejadx,geb and other reverse tools can not recognize thisdex, can also fight tools such as frida-dexdump, for the memory of the index file head.The code is as follows:
-
-
-```ts /* https://github.com/hluwa/frida-dexdump/blob/d4b7d24a8ce0dada17fb1ce9849a8c1cffcb2cae/agent/src/search.ts#L115 */
-
-
-Process.enumerateRanges('r--').forEach(function (range: RangeDetails) { try {Memory.scanSync (range.base, range.size, "64 65 78 0a 30?? 00").forEach(function (match) {if (range.file & & range.file.path & & (range.file.path.startsWith("/data/dalvik-cache/") | | range.file.path.startsWith("/system/")))
-
+Process.enumerateRanges('r--').forEach(function (range: RangeDetails) {
+        try {
+            Memory.scanSync(range.base, range.size, "64 65 78 0a 30 ?? ?? 00").forEach(function (match) {
+                if (range.file && range.file.path
+                    && (range.file.path.startsWith("/data/dalvik-cache/") ||
+                        range.file.path.startsWith("/system/"))) {
+                    return;
+                }
+                ...
+            });
 
 ```
 
-There are many fields that can randomly fill some unnecessary junk data, to construct a deformeddex, so that the deducteddex can not be distinguished and reverse compiled, this situation will affect the success rate when repairing using the late point dumpeddex.
+As long as the dex structure in the memory does not affect the normal operation of the App, there are still many fields that can be randomly filled with some useless garbage data to construct a deformed dex, making the dex unrecognizable and undecompilable. This will affect the success rate of repairing using the dex dumped at the lag point.
 
 
+### New tool: Fart12 custom automatic batch repair script released
 
+Before introducing the new tool, let me give you an advertisement.
 
-### New tool: Fart12 customized automatic batch repair script release
+#### The reason why Fart12 is not afraid of environmental testing
 
+Fart12's unshelled ROM does not have root, nor is it a userdebug debugging system, nor does it have any string feature fingerprints such as fart. It also has a Google Play Store. It is just a normal mobile phone system for ordinary people.
 
-Make an advertisement before introducing a new tool.
+#### One line of command automatically repairs all dex
 
+This automatic repair tool is specially customized for Fart12 unpacked ROM. It can automatically repair and merge all dex and bin files obtained by unpacking the free FART10 and FART12, without the need to repair them one by one. The specific usage process is as follows:
 
-### # Fart12 is not afraid of environmental detection
+1. After using the whitelist.txt file to complete the active call of the class to be repaired, directly `adb pull /sdcard/ooxx/packagename` to obtain the complete directory file. In this directory, there are all the dex, txt, and bin files obtained by unpacking and repairing FART10 and FART12. The directory content is as follows:
 
+![](pic/03.png)
 
-Fart12 has no root, no userdebug debugging system, no fingerprints of any string characteristics such as fart, and there is a Google App Store, he is a normal human cell phone system.
+2. Start cmd and execute java -jar repireall folderpath to start merging and repairing all dex and bin files in the directory. The following figure is a screenshot of the start of repair. At this time, automatic repair of dex and bin files begins one by one.
 
+![](pic/04.png)
 
-One line commands automatically fix all thedex
+3. When the repair is completed, the prompt "Rrepire all dexfile end!" will be printed, which means that the automated repair has ended.
 
+![](pic/05.png)
 
-This automated repair tool is customized for the Fart12 decoupled ROM and automates one-click repair and all thedex andbin files for all of the donated FART10 and FART12 decouped files, no longer requiring one repair.The specific use process is as follows: 
+The repaired dex is located in the repire directory under the current directory. The following figure shows the directory and a screenshot of the repaired dex file.
 
+![](pic/06.png)
+![](pic/07.png)
 
-1. After using the whitelist.txt file, after completing the active call of the class to be repaired, directly `adb pull /sdcard/ooxx/packagename`, obtain the complete directory file, under which the directory has FART10 and FART12 shell-out and all the recovereddex,txt,bin files, the catalogue content is roughly as follows:
+After the repair is completed, you only need to use jadx, jeb, gda, etc. to open it.
 
+### Case demonstration of the complete shell removal and repair process
 
-[] (pic/03.png)
+First install test.apk to the Fart12 phone.
 
+```
+$ adb install test.apk
+```
 
-2. Start cmd, execute java -jar repireall folderpath to begin the consolidation of all thedex andbin files under the directory, the following figure to begin to repair the screenshot, then start the automated repair of thedex usingbin files one by one.
+#### First remove the overall shell
 
+After the installation is complete, long press the App icon, click "App Info", and in the "Permissions" column, change the "Files and Media" permission to "Allow management of all files", and click "Allow" for any prompts. Finally, "Files and Media" will appear in the "Allowed" column.
 
-[] (pic/04.png)
+>Of course, some apps don't actually apply for file and media permissions, but the shelled ROM has already dealt with this. When the app is installed, it will apply for this permission, so don't worry about it.
 
+At this time, click to open the App, and the whole shell has been removed. When adb enters the phone, you can see the whole dex file and the class list txt file that have been removed at different times.
 
-3. When the repair is completed, the Rrepire all dexfile end! prompt is printed, representing the automated repair has been completed.
+```
+$ cd /sdcard/ooxx/com.yunmai.valueoflife
+$ ls
+```
 
+![](pic/08.png)
 
-[] (pic/05.png)
+You can directly search for some of the four major component function names registered in AndroidManifest.xml in the folder. These function names generally cannot be obfuscated, such as `com.yunmai.valueoflife.MainActivity`.
 
+![](pic/09.png)
 
-The repaireddex is located in the repire directory under the current directory, which is shown below, as well as a copy of the recovereddex file.
+The commands used are as follows:
 
+```
+$ grep -ril "MainActivity" *
+```
 
-[] (pic/06.png)!
+![](pic/10.png)
 
+If the class we are looking for exists in the file `8461968_classlist_LoadMethod.txt`, then drag `8461968_dexfile*.dex` to the computer and open a decompiler to see if it is correct. We can find that most of the class names and method names are indeed obfuscated.
 
-When the repair is complete, only need to open with jadx, jeb, gda etc.
+![](pic/11.png)
 
+Switch to the smali tab, and you can see that the method bodies are all nops. This is a typical shell extraction feature, and the actual logical process of the method cannot be seen.
 
-## Case demonstration of complete decolletion repair process
-
-
-First, install test.apk to your Fart12 phone.
-
-
-``` $ adb install test.apk `` ''
-
-
-# # # First take the whole shell off
-
-
-After the installation is completed, press the icon of the App, click on "Application Information", in the "Permissions" column, change the permissions for "Documents and Media" to "Allow all files to be managed", and any hint will click "Permit".Finally, "Documents and Media" appears in the "Allowed" column.
-
-
-> Of course, some apps do not have the permission to apply for documents and media, and de-shell ROM has already dealt with this point.When you install the app, you will apply for this permission, so don't worry about it.
-
-
-Then click on Open the App, so that the entire shell is done.Adb enters the phone, and you can see the entiredex file that has been removed at different times, and the class list of txt files.
-
-
-``` $ cd /sdcard/ooxx/com.yunmai.valueoflife $ ls `` ''
-
-
-[] (pic/08.png)
-
-
-The four main function names registered in AndroidManifest.xml can be searched directly in the folder, which are generally not to be confused.For example, `com.yunmai.valueoflife.MainActivity`.
-
-
-[] (pic/09.png)
-
-
-The command used is as follows:
-
-
-"` $ grep -ril "MainActivity" * ```
-
-
-[] (pic/10.png)
-
-
-If the class we're looking for exists in the `8461968_classlist_LoadMethod.txt` file, then you drag it to the computer and open a countercompilation.It was found that most class names and method names were confused.
-
-
-[] (pic/11.png)
-
-
-Switching to the small tab, you can see the methods are alsonop, which is a typical extracting shell characteristic, can not see the actual logical process of the method.
-
-
-[] (pic/12.png)
-
+![](pic/12.png)
 
 The next step is to solve the problem of extracting the shell and restore the function body.
 
+#### Remove the shell again
 
-♪ ♪ Take off the shell again ♪
+To unpack the shell, the class is loaded and then the function body is dumped into a bin file. Finally, the function body in the bin file is filled back into the dex file to form a complete dex file. In this way, the method logic in the figure above is restored.
 
+And in the decompression scheme, the whitelist mode is selected. Why not just decompress the entire package? There are three reasons for this:
 
-Dump the shell, using the method of loading the class and then dump the function to the bin file.Finally, the functions in the bin file are filled back into thedex, and the completedex file is formed, so that the logic of the methods in the diagram above is restored.
+1. Some apps are relatively large, with tens of thousands, hundreds of thousands, or millions of classes and methods. Full recovery is time-consuming and labor-intensive. If the system cannot handle it, it will kill the app or crash itself.
 
+2. Some shells will write some junk classes that are not used by the `App`, and write some exit codes in the junk classes. These junk classes will never be loaded in the normal use process of the App. If Fart12 loads them at this time, it will step on a landmine and the App will crash and exit.
 
-And in the decoupled program, the white list 'Whitelist' mode is selected.Why don't you take it all out right now?This is reasonable, for three reasons:
+3. Some shells will also hook the functions in Art's class loading process to sense which classes are being loaded, such as LoadMethod or LinkCode. Once the traversal of the class list is found, it can exit to prevent the subsequent active loading of class methods.
 
+![](pic/13.png)
 
-1. Some apps are relatively large, tens of thousands and tens of millions of types of methods, full recovery is time-consuming, the system cannot support will kill the application or collapse itself.
+In our case, the above situation does not exist, so let's learn how to restore the full volume first. In the directory of `/sdcard/ooxx/com.yunmai.valueoflife`, execute:
 
+```
+$ cat *classlist* >> whitelist.txt
+```
 
-2. Some shells will write some `App` unnecessary junk categories, write some exit code in the junk category, these junk classes will never be loaded in the normal usage process of the app, in which case if Fart12 loads it, stumbles on the mine, the app crashes out.
+If you are not sure, you can check whether the `whitelist.txt` is already filled with function class method names.
 
+Open `logcat` and wait for a while, you can see the log of `fart` in the log. At this time, it is in the function body file of the `dump` class.
 
-Some shells also hook functions in Art's class loading process to detect which classes are being loaded, such as LoadMethod or LinkCode, and withdraw when the class list is discovered, preventing subsequent actively loaded class methods from occurring.
+```
+ActivityThread: sleep over and start fart
+ActivityThread: try loadClass class:XI.CA.XI.K0$XI
+ActivityThread: try loadClass class:XI.CA.XI.XI
+```
 
+![](pic/14.png)
 
-[] (pic/13.png)
+You can use the `ls -alit` command multiple times to view the latest generated bin file.
 
+![](pic/15.png)
 
-In our case, the above situation does not exist, so first learn how to fully recover.In the `/sdcard/ooxx/com.yunmai.valueoflife` directory, execute:
+The dump process can last from several minutes to several hours, until the words "fart run over" appear in "logcat", indicating that the dump is complete, and then drag the entire folder to the computer.
 
+```
+% adb pull /sdcard/ooxx/com.yunmai.valueoflife
+```
 
-``` $ cat *classlist* >> whitelist.txt `` ''
+#### Reorganize dex
 
+Thanks to the release of new tools, reorganizing dex has become extremely simple, just one command:
 
-Do not rest assured to see if the function class name has been filled in in 'whitelist.txt'.
+```
+% java -jar repireall.jar com.yunmai.valueoflife
+```
 
+![](pic/16.png)
 
-Open 'logcat' and wait a little while to see the log of 'fart' appearing in the log.This is the function file in the `dump` class.
+>Of course, it is necessary to install the JDK environment on the computer in advance.
 
+Reorganization takes some time. The tool will automatically use the function body in the bin file to fill in the corresponding dex file. The prompt for the completion of the reorganization is: `Repire all dexfile end! Please enjoy!`
 
-``` ActivityThread: sleep over and start fartCA.XI.K0$XI ActivityThread: try loadCA.XI.XI
+After the reorganization is completed, a folder called `repire` will be generated in the same directory, which contains all the repaired dex files. For example, if we look at the dex file that lacks the function body, we can see the business logic of the function body clearly.
 
+![](pic/17.png)
 
-[] (pic/14.png)
+In addition, everyone may have questions, what is the difference between the three files dex, LoadMethod, and OpenCommen?
 
+![](pic/18.png)
 
-The latest generated bin file can be viewed several times with the `ls-alit` command.
+In fact, they are the whole dex files dumped at different unpacking times. The previous article also explained that in some cases, abnormal dex will be dumped. Therefore, providing more opportunities can have higher fault tolerance, which means: there is always one right one.
 
+#### Reorganize dex and use FartFix on mobile phone
 
-[] (pic/15.png)
+Enthusiastic netizens made the above repair tool into an App, called FartFix, which can be repaired directly on the phone without dragging it to the computer for repair, saving the trouble of installing the Java environment on the computer. The interface is as follows:
 
+![](pic/19.png)
 
-The dump process can last for minutes to hours, until the word 'fart run over' appears in 'logcat', and the entire folder is dragged to the computer.
+After the above process of actively calling the dump function body is completed, click the App to open it, grant the folder read and write management permissions as required, enter the path of the dex to be repaired, and click Start Processing.
 
+```
+% adb shell input text /sdcard/ooxx/com.yunmai.valueoflife
+```
 
-``` %adb pull /sdcard/ooxx/com.yunmai.valueoflife `` ''
+The app is very crude and there is no prompt during the whole process, including in logcat. After a while, you can find that the repaired dex has been generated in the directory /sdcard/ooxx/repire, as shown in the figure.
 
+![](pic/20.png)
 
-### Reorganizedex
+Then you can drag it to your computer for analysis.
 
+### Bypassing the shell detection mechanism
 
-With the release of the new tool, the reorganization ofdex has become unusually simple, with a single command:
+As mentioned above, the shell has some methods to detect and resist active calls of Fart12. Correspondingly, we also have some methods to bypass these detections. There are two main methods:
 
+1. Narrow the scope. For example, only write a few, dozens, or hundreds of class names to the whitelist.txt file, and only remove the classes you want to see. The shell will never prevent the loading of business code, otherwise the App itself will crash. Or only process all classes in a dex:
 
-`` '' %java -jar repireall.jar com.yunmai.valueoflife '' ''
+```
+$ cp 8461968_classlist.txt whitelist.txt
+```
 
-
-[] (pic/16.png)
-
-
-> Of course it is necessary to install the JDK environment in advance on the computer.
-
-
-The restructuring takes some time, and the tool will automatically use the functions in the bin file to fill in the correspondingdex file, the tip to restructure is:`Repire all dexfile end!Please enjoy!`
-
-
-Reorganization completion generates the `repire` folder under the directory, containing all repaireddex files.For example, we have seen before the missing function, that is the effect, the function's operating logic has a complete overview.
-
-
-[] (pic/17.png)
-
-
-In addition, you will also be wondering, what is the difference between the three documentsdex,LoadMethod,OpenCommen?
-
-
-[] (pic/18.png)
-
-
-In fact, they are in different decoy times dumping down the entiredex file, the preamble also explains some cases that will dump down the deformeddex.So give more time to have a higher tolerance of error, which means: always one is right.
-
-
-### Reorganizedex on your phone using FartFix
-
-
-The enthusiastic netizens made the above repair tool into an app, called FartFix, can be repaired directly on the phone, without dragging to the computer to repair, to avoid the pain of installing Java environment on the computer.The interface is as follows:
-
-
-[] (pic/19.png)
-
-
-After the process of actively invoking the dump function is completed, click on the App open, give the folder read-write management permission as requested, enter the path where thedex is to be repaired, and click on start processing.
-
-
-``` %adb shell input text /sdcard/ooxx/com.yunmai.valueoflife `` ''
-
-
-The app is relatively simple, with no hints throughout, not even in the logcat.A little more than a moment, you can find that the fixeddex has been generated in the `/sdcard/ooxx/repire` directory, as shown in the figure.
-
-
-[] (pic/20.png)
-
-
-It can then be dragged to the computer for analysis.
-
-
-# # The circumvention of the detection mechanism of the shell
-
-
-Speaking of Shell above, there are some methods to detect and counter Fart12 active calls, and accordingly we have some ways to bypass these tests.There are two main approaches:
-
-
-1. The scope is narrowed.For example, just write a few, dozens, hundreds of category names in the `whitelist.txt`, only those you want to see.Shell has no chance of blocking the loading of business code, otherwise the app itself will collapse.Or just handle all the classes in onedex:
-
-
-``` $ cp 8461968_classlist.txt whitelist. txt `` ''
-
-
-2. Skip the detection class.In the logcat log itself, you can see the name of the category you try to load when the crash occurs, bypassing that category.The class can be deleted from 'whitelist.txt'.Empty all the remaining files, and then click App again.
-
+2. Skip the detection class. In the logcat log, you can see the class name that was attempted to be loaded when the crash occurred. Just bypass that class. You can delete that class from whitelist.txt. Clear all other files and click App to start over.

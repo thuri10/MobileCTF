@@ -3,6 +3,61 @@
 
 > Topics
 
+The code for the `Item01Activity` is
+
+```java
+/* loaded from: classes5.dex */
+public class Item01Activity extends AppCompatActivity {
+    private String mKey = "0123456789roysue";
+    TextView message_tv;
+    EditText username_et;
+
+    @Override // androidx.fragment.app.FragmentActivity, androidx.activity.ComponentActivity, androidx.core.app.ComponentActivity, android.app.Activity
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_item01);
+        this.username_et = (EditText) findViewById(R.id.editText);
+        this.message_tv = (TextView) findViewById(R.id.textView);
+        findViewById(R.id.button_item_01).setOnClickListener(new View.OnClickListener() { // from class: com.r0ysue.rctf.algo.Item01Activity.1
+            @Override // android.view.View.OnClickListener
+            public void onClick(View view) {
+                String result1 = null;
+                try {
+                    result1 = AlgoHelper.doMath(Item01Activity.this.username_et.getText().toString().getBytes("utf-8")) + "";
+                    String str = AlgoHelper.doMath(result1.getBytes()) + "";
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                String result3 = AlgoHelper.encryp(result1, Item01Activity.this.mKey);
+                if (result3.equals("8237CE97506C0FB1D389F2A906FE04FC0A")) {
+                    Item01Activity.this.message_tv.setText("Congratulation for you!!!");
+                } else {
+                    Item01Activity.this.message_tv.setText("Keep Going........");
+                }
+            }
+        });
+    }
+}
+```
+
+The `doMath` function calls the native library for further analysis
+
+```java
+public class AlgoHelper {
+    public static native String Sign(String str);
+
+    public static native String decrypt(String str, String str2);
+
+    public static native String doMath(byte[] bArr);
+
+    public static native String encryp(String str, String str2);
+
+    static {
+        System.loadLibrary("rctf");
+    }
+}
+```
+
 
 Get the flag through the countercompilation program 
 
@@ -16,7 +71,7 @@ Get the flag through the countercompilation program
 ![](./image/02.png)
 
 
-From one point, we need to get the encrypted result equal to `A952C70B9F21623B8B826F0355132163`
+From one point, we need to get the encrypted result equal to `8237CE97506C0FB1D389F2A906FE04FC0A`
 
 
 During this process, the value of the input is encrypted twice;

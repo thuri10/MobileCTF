@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:versionCode="1"
+    android:versionName="1.0"
+    package="com.example.test.ctf02"
+    platformBuildVersionCode="24"
+    platformBuildVersionName="7">
+    <uses-sdk
+        android:minSdkVersion="14"
+        android:targetSdkVersion="24"/>
+    <application
+        android:theme="@style/AppTheme"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:debuggable="true"
+        android:allowBackup="true"
+        android:supportsRtl="true">
+        <activity android:name="com.example.test.ctf02.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <receiver
+            android:name="com.example.test.ctf02.GetAndChange"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.is.very.fun"/>
+            </intent-filter>
+        </receiver>
+        <activity android:name="com.example.test.ctf02.NextContent"/>
+        <activity android:name="com.example.test.ctf02.MainActivity2"/>
+    </application>
+</manifest>
