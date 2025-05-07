@@ -1,58 +1,51 @@
-# 天天小额贷
+♪ Small loans every day ♪
 
-1. 该程序代码中，手机号登录界面所对应类名（答案格式：com.tencent.mm.xxx.xxx）
-答> cn.forensix.daikuan.ui.login.LoginActivity
+1. In the program code, the corresponding class name for the phone number login interface (response format: com.tencent.mm.xxx.xxx) is answered> cn.forensix.daikuan.ui.login.LoginActivity
 
-2.  解密libdaikuan.so使用的加密算法 
-答> AES-CBC-Pkcs5padding
+2. Decrypting libdaikuan.So used encryption algorithm AES-CBC-Pkcs5padding
 
-3. 解密libdaikuan.so使用的加密密钥？
-答> HL202304181226XY
+3. Decrypt the encryption key used by libdaikuan.so?
+A> HL202304181226XY
 
 
-4. 程序登录时，提交请求是调用的JNI函数，请问该JNI函数对应的Java层函数名是什么？
-答>doPost
+4. When the application logs in, the request is a JNI function called, please ask what is the corresponding Java layer function name for the JNI functions?
+Answer>doPost
 
 
-5. 程序登录时，请求的IP地址？
+5. The requested IP address when logging in?
 
 
 
-6. 程序中潜藏的flag？（答案格式:flag:AABB123456）
-答>flag:HL202304151122KTYMXL
+6. Hidden flags in the program?(Response format:flag:AABB123456)
 
 
 
-过程文档：
+Process documentation:
 
-1. 首先对 APK 文件解包 ，提取 libdaikuan.so 文件， 用 64 bit 的 IDA 打开 ，发现打不开，这个 so 是加密状态。
+1. First unpack the APK file, extract the libdaikuan.so file, open it with 64 bit IDA and find it unopenable, this so is encrypted.
 
-2. so 一般会在启动的时候进行加载，我们找到应用启动的时候第一个要加载的类，即 SplashActivity , 在里面发现了 so 加载的逻辑，如图 2-1 所示：
+2. so usually loads at startup, we find the first class to load when the application starts, namely SplashActivity, in which the logic of so loading is found, as shown in Figure 2-1:
 
-![](./images/19.png)
-图 2-1 
+! [] (./images/19.png) Figure 2-1 
 
-3. 继续追踪，看他了它处理 so 的逻辑 ：
+3. Continue to trace and see how he deals with the logic of so:
 
-![](./images/20.png)
-图 2-2
+![] (./images/20.png) Figure 2-2
 
-4. 再往下走可以看到加密算法，使用的是 AES/CBC/PKCS5Padding ，这时候也可以确认密钥 ：HL202304181226XY，大家感兴趣可以还原一下算法，它把so解密以后放在了 /data/data/packagename 目录下，我们直接提取出来用 IDA 打开即可；当然也可以用 frida 把 so dump 再修复
+4. Going down, you can see the encryption algorithm, using AES/CBC/PKCS5Padding, then you can also verify the key:HL202304181226XY, you are interested to restore the algority, it is placed so decrypted after /data/data/packagename directory, we can extract it directly with IDA; of course you can use frida to fix so dump
 
-5. 打开后可以正常看到导出表，如图 2-3 所示：
+5. When opened, you can see the output table, as shown in Figure 2-3:
 
-![](./images/21.png)
-图 2-3
+![] (./images/21.png) Figure 2-3
 
-除此之外，我们还看到了 flag ，双击进去看它的内容，如图 2-4 所示：
+Besides, we see the flag and double-click on it to see what it contains, as shown in Figure 2-4:
 
-![](./images/22.png)
-图 2-4
+![] (./images/22.png) Figure 2-4
 
-6. ip 地址 ，如图 2-5 所示，自己用 bae64 解密一下就好
+6. The IP address, as shown in Figure 2 - 5, can be decrypted with a Boo64
 
-![](./images/23.png)
-图 2-5
+![] (./images/23.png) Figure 2-5
+
 
 
 

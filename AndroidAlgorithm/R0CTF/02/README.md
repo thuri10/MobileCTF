@@ -1,22 +1,22 @@
-# 第二题
+# Question 2
 
-文件： ./02RCTF/file/rctf-debug.apk
+File: ./02RCTF/file/rctf-debug.apk
 
-## 题目要求
+## Question Requirements
 
-> 题目要求：输入6位数字，得到 Congratulation for you!!!
+> Question requirements: Enter a 6-digit number and get Congratulation for you!!!
 
-## 解题
+## Problem Solving
 
-点击按钮进入第二题目，题目要求输入6位数字，打开 Jadx 观看反编译后的核心业务逻辑代码：
+Click the button to enter the second question, which requires you to enter a 6-digit number. Open Jadx to view the decompiled core business logic code:
 
 ![](./image/01.png)
 
-使用 Sign 函数计算输入的内容，Sign 函数是一个 native 函数：
+Use the Sign function to calculate the input content. The Sign function is a native function:
 
 ![](./image/02.png)
 
-打开目标so，我们来看这个函数的具体实现：
+Open the target so, let's look at the specific implementation of this function:
 
 ```c
 int __fastcall ngis(_JNIEnv *a1, int a2, int a3)
@@ -70,27 +70,27 @@ int __fastcall ngis(_JNIEnv *a1, int a2, int a3)
 }
 ```
 
-大概浏览代码，我们知道使用了 NDK 反射 Java 层的 MD5 ，但是具体有没有改内容，我们没有更多的时间去看，直接动态验证一下：
+After browsing the code, we know that the MD5 of the NDK reflection Java layer is used, but we don’t have more time to check whether the content has been changed. Let’s verify it dynamically:
 
 ![](./image/03.png)
 
-然后再到 cyberchef 中验证：
+Then verify it in cyberchef:
 
 ![](./image/04.png)
 
-可以看到，结果是一致的，那么既然是标准算法，而且输入是简单的数字，我们可以到彩虹表中碰碰运气：
+As you can see, the results are consistent, so since it is a standard algorithm and the input is a simple number, we can try our luck in the rainbow table:
 
 ![](./image/05.png)
 
-然后将结果输入文本框内，得到 Congratulation for you!!! 结果：
+Then enter the result into the text box and get Congratulation for you!!! Result:
 
 ![](./image/06.png)
 
-当然我们也可以用 frida 主动调用这个函数暴力拿值。
+Of course, we can also use frida to actively call this function to violently get the value.
 
-也可以使用 unidbg 来做，毕竟手机的性能是有点差的。
+You can also use unidbg to do it, after all, the performance of the mobile phone is a bit poor.
 
-首先就是框架的搭建：
+The first step is to build the framework:
 
 ```java
 package com.test;
@@ -151,11 +151,11 @@ public class Test extends AbstractJni {
 
 ```
 
-然后运行，发现报了一个环境的错误：
+Then run it and find that an environment error is reported:
 
 ![](./image/07.png)
 
-这里获取了指纹信息，需要补环境，但是根据前面frida的动态验证，其实并没有使用到任何其它信息，说明这里就在阻碍 unidbg 的运行：这里我们补环境，随意给些内容就好：
+The fingerprint information is obtained here, and the environment needs to be supplemented. However, according to the dynamic verification of frida above, no other information is actually used, which means that this is hindering the operation of unidbg: Here we supplement the environment and just give some content at random:
 
 ```java
 @Override
@@ -169,11 +169,11 @@ public DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, String si
 }
 ```
 
-最后得到结果：
+Finally, the result is:
 
 ![](./image/08.png)
 
-我们暴力遍历6位数字，获取最终的结果（如果对 Java 熟悉的可以开多线程去跑）
+We violently traverse the 6-digit number and get the final result (if you are familiar with Java, you can run it in multiple threads)
 
 ```java
 package com.test;
@@ -211,7 +211,7 @@ public class Test extends AbstractJni {
         String targetHash = "508df4cb2f4d8f80519256258cfb975f";
         String input = "";
         for (int i = 100000; i <= 999999; i++) {
-            input = String.format("%06d", i); // 格化为6位数字字符串
+            input = String.format("%06d", i); //Format into a 6-digit string
             System.out.println(input);
             String res = test.call_func(input);
             if (res.equals(targetHash)) {
@@ -263,8 +263,7 @@ public class Test extends AbstractJni {
 
 ```
 
-最终的结果就是 234567 
-
+The final result is 234567
 
 
 

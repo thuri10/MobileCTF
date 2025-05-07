@@ -1,229 +1,280 @@
-
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
 
-<!-- code_chunk_output -->
 
-- [旧版Fart12定制版jadx的弊端](#旧版fart12定制版jadx的弊端)
-- [新工具：Fart12定制自动批量修复脚本发布](#新工具fart12定制自动批量修复脚本发布)
-  - [Fart12无惧环境检测的原因](#fart12无惧环境检测的原因)
-  - [一行命令自动修复所有的dex](#一行命令自动修复所有的dex)
-- [案例演示完整脱壳修复流程](#案例演示完整脱壳修复流程)
-  - [先脱整体壳](#先脱整体壳)
-  - [再脱抽取壳](#再脱抽取壳)
-  - [重组dex](#重组dex)
-  - [重组dex之在手机上使用FartFix](#重组dex之在手机上使用fartfix)
-- [壳的检测机制的绕过](#壳的检测机制的绕过)
+<!--code_chunk_output -->
+
+
+- [new tool: Fart12 custom automatic batch repair script released] (#new toolfart12 Custom Automatic Batch Repair script released) - [Fart12 fearless environment detection reasons] - [one line command automatically repairs alldex] - (#one line commands automatically repaired alldex) - (example demonstrates complete decoupling repair process) (#example showing complete decoupage repair procedure) - - [first out of the whole shell] - - (first off the entire shell) - / (# again off the shell extract) - &#reassembly of the shells) -
+
 
 <!-- /code_chunk_output -->
 
 
 
-### 旧版Fart12定制版jadx的弊端
 
-之前推出的Fart12定制版jadx可以将Fart12脱下来的dex文件与主动调用过程中拿到的函数体bin文件自动重构与合并，修复并合并成新的dex。
 
-![](pic/01.png)
 
-修复完之后dex文件大小也会变大，且函数体也由原来的nop变成了真正的函数逻辑代码体。
+### Old version of Fart12 custom version of jadex shortcomings
 
-![](pic/02.png)
 
-工具虽然好用，但是还有些局限。比如：
+The previously launched Fart12 custom version of jadx can automatically reconstruct and merge the dex files from Fart 12 with the function body bin files obtained during the active call, repair and merge into a new dex.
 
-1. 一次只能修复单个dex文件，效率不高；
-2. 还有就是修复时机的问题，使用不同脱壳点dump下来的dex来修复，有些会出现修复失败的情况。
 
-针对上述的第二点，展开说明一下。理论上来讲，在二代函数体填充壳的脱壳过程中，其实不管哪个时机点dump下来的整体dex，应该内容是一模一样的，或者说在滞后一些的时机dump下来的dex，应该还比稍早时期dump的还要完整一些，因为在App的运行过程中会触发一些函数体的解密和还原。
+[] (pic/01.png)
 
-但是有些时候，使用滞后点dump下来的整体dex来修复的时候，竟然会出现修复失败的情况，那是因为有些壳在整体加载完成后，对内存中的dex结构，进行了一些破坏，以对抗一些整体dump的工具。比如破坏dex的文件头，就可以导致哪怕脱下来之后jadx、geb等逆向工具也识别不出这个dex，也可以对抗如frida-dexdump的工具，对内存中dex文件头的遍历搜索。相关代码如下：
 
-```ts
-/* https://github.com/hluwa/frida-dexdump/blob/d4b7d24a8ce0dada17fb1ce9849a8c1cffcb2cae/agent/src/search.ts#L115 */
+After repairing, the size of thedex file will be increased, and the function body will be converted from the originalnop to the true function logic code.
 
-Process.enumerateRanges('r--').forEach(function (range: RangeDetails) {
-        try {
-            Memory.scanSync(range.base, range.size, "64 65 78 0a 30 ?? ?? 00").forEach(function (match) {
-                if (range.file && range.file.path
-                    && (range.file.path.startsWith("/data/dalvik-cache/") ||
-                        range.file.path.startsWith("/system/"))) {
-                    return;
-                }
-                ...
-            });
+
+[] (pic/02.png)
+
+
+The tool is useful, but there are some limitations.比如：
+
+
+2. There is also a problem of fixing time, using different decal dump points to fix the decal, some of which may fail to fix.
+
+
+On the second point above, let me explain.Theoretically, in the second generation function filling shell decoupling process, in fact, no matter which time point dump down the overalldex, the content should be the same, or in some lagging down the time dump of thedex, should be more complete than earlier period dump, because in the run-up of the app will trigger some function of decryption and restoration.
+
+
+Sometimes, however, when repairing the total dex from the late point dump, there is a repair failure, which is because some shells, after the overall load is completed, have done some damage to the dex structure in the memory, to combat some of the total dump tools.For example, the destruction of the file header of thedex, it can cause even after the decommissioning of thejadx,geb and other reverse tools can not recognize thisdex, can also fight tools such as frida-dexdump, for the memory of the index file head.The code is as follows:
+
+
+```ts /* https://github.com/hluwa/frida-dexdump/blob/d4b7d24a8ce0dada17fb1ce9849a8c1cffcb2cae/agent/src/search.ts#L115 */
+
+
+Process.enumerateRanges('r--').forEach(function (range: RangeDetails) { try {Memory.scanSync (range.base, range.size, "64 65 78 0a 30?? 00").forEach(function (match) {if (range.file & & range.file.path & & (range.file.path.startsWith("/data/dalvik-cache/") | | range.file.path.startsWith("/system/")))
+
 
 ```
 
-内存中的dex结构只要是可以不影响App的正常运行，还有很多字段可以随机填充一些无用的垃圾数据，来构造畸形的dex，使得脱下来的dex无法别识别、反编译，这种情况会影响到使用滞后点dump下来的dex进行修复时的成功率。
+There are many fields that can randomly fill some unnecessary junk data, to construct a deformeddex, so that the deducteddex can not be distinguished and reverse compiled, this situation will affect the success rate when repairing using the late point dumpeddex.
 
 
-### 新工具：Fart12定制自动批量修复脚本发布
 
-介绍新工具之前先打个广告。
 
-#### Fart12无惧环境检测的原因
+### New tool: Fart12 customized automatic batch repair script release
 
-Fart12的脱壳ROM没有root，也不是userdebug调试系统，也没有fart等任何字符串特征指纹，也有谷歌应用商店，他就是一个正常的普通人的手机系统。
 
-#### 一行命令自动修复所有的dex
+Make an advertisement before introducing a new tool.
 
-该自动化修复工具专为Fart12脱壳ROM定制，针对赠送的FART10以及FART12脱壳获取的所有dex以及bin文件，可自动化一键修复合并所有dex和bin文件，不再需要一个个进行修复。具体使用流程如下： 
 
-1. 在使用whitelist.txt文件，完成要修复的类的主动调用后，直接`adb pull /sdcard/ooxx/packagename`，获取完整目录文件，该目录下有FART10以及FART12脱壳以及修复得到的所有dex、txt、bin文件，目录内容大致如下：
+### # Fart12 is not afraid of environmental detection
 
-![](pic/03.png)
 
-2. 启动cmd，执行java -jar repireall folderpath即可开始对该目录下的所有dex和bin文件的合并修复，下图为开始修复截图，此时开始逐个对dex使用bin文件进行自动化修复。
+Fart12 has no root, no userdebug debugging system, no fingerprints of any string characteristics such as fart, and there is a Google App Store, he is a normal human cell phone system.
 
-![](pic/04.png)
 
-3. 当修复完成后，此时会打印Rrepire all dexfile end!提示，此时代表自动化修复已经结束。
+One line commands automatically fix all thedex
 
-![](pic/05.png)
 
-修复后的dex位于当前目录下的repire目录，下图为该目录，以及修复的dex文件截图。
+This automated repair tool is customized for the Fart12 decoupled ROM and automates one-click repair and all thedex andbin files for all of the donated FART10 and FART12 decouped files, no longer requiring one repair.The specific use process is as follows: 
 
-![](pic/06.png)
-![](pic/07.png)
 
-修复完成后，只需要使用jadx、jeb、gda等打开即可。
+1. After using the whitelist.txt file, after completing the active call of the class to be repaired, directly `adb pull /sdcard/ooxx/packagename`, obtain the complete directory file, under which the directory has FART10 and FART12 shell-out and all the recovereddex,txt,bin files, the catalogue content is roughly as follows:
 
-### 案例演示完整脱壳修复流程
 
-首先将test.apk安装到Fart12手机中去。
+[] (pic/03.png)
 
-```
-$ adb install test.apk
-```
 
-#### 先脱整体壳
+2. Start cmd, execute java -jar repireall folderpath to begin the consolidation of all thedex andbin files under the directory, the following figure to begin to repair the screenshot, then start the automated repair of thedex usingbin files one by one.
 
-安装完成后，长按App的图标，点击“应用信息”，在“权限”一栏，把“文件和媒体”的权限改成“允许管理所有文件”，任何提示都点击“允许”。最终在“已允许”栏目中出现“文件和媒体”。
 
->当然，有些App其实没有申请文件和媒体的权限，脱壳ROM针对这一点已经做了处理。在App安装的时候，会为其申请这个权限，所以不用担心这一点。
+[] (pic/04.png)
 
-这时候再点击打开App，这样整体壳已经脱壳完成。adb进入手机中，可以看到已经在不同时机脱下来的整体dex文件，和类列表txt文件。
 
-```
-$ cd /sdcard/ooxx/com.yunmai.valueoflife
-$ ls
-```
+3. When the repair is completed, the Rrepire all dexfile end! prompt is printed, representing the automated repair has been completed.
 
-![](pic/08.png)
 
-可以在文件夹中直接搜一些AndroidManifest.xml中注册好的四大组件函数名，这些函数名一般是无法被混淆的。例如`com.yunmai.valueoflife.MainActivity`。
+[] (pic/05.png)
 
-![](pic/09.png)
 
-使用的命令如下：
+The repaireddex is located in the repire directory under the current directory, which is shown below, as well as a copy of the recovereddex file.
 
-```
-$ grep -ril "MainActivity" *
-```
 
-![](pic/10.png)
+[] (pic/06.png)!
 
-那么在`8461968_classlist_LoadMethod.txt`文件中存在着我们要找的类，那就把`8461968_dexfile*.dex`拖到电脑上，随便打开一个反编译看下。发现确实大部分类名、方法名都进行了混淆。
 
-![](pic/11.png)
+When the repair is complete, only need to open with jadx, jeb, gda etc.
 
-切换到smali的tab，可以看到方法体也都是nop，这是典型的抽取壳特征，看不到方法的实际逻辑过程。
 
-![](pic/12.png)
+## Case demonstration of complete decolletion repair process
 
-那下一步就是解决抽取壳的问题，把函数体恢复出来。
 
-#### 再脱抽取壳
+First, install test.apk to your Fart12 phone.
 
-脱抽取壳，采用的是将类加载起来，再dump函数体到bin文件的方式。最后将bin文件里的函数体回填到dex中，组成完整的dex文件，这样上图中的方法逻辑就恢复好了。
 
-并且在脱壳的方案上，选择的是白名单`Whitelist`的模式。为什么不直接全量脱？这是有讲究的，原因有三：
+``` $ adb install test.apk `` ''
 
-1. 有些App比较大，几万几十几万百万个类方法，全量恢复耗时耗力，系统承载不住会将应用kill掉或者自己崩溃。
 
-2. 有些壳会写一些`App`用不上的垃圾类，在垃圾类里写一些退出的代码，这些垃圾类在App的正常使用流程中永远不会被加载，此时如果Fart12将其加载了，就踩上了地雷，App崩溃退出。
+# # # First take the whole shell off
 
-3. 有些壳还会对Art的类加载流程中的函数进行hook来感知到哪些类正在被加载，如LoadMethod或LinkCode，一旦发现对类列表的遍历行为即可退出，防止后续主动加载类方法行为的发生。
 
-![](pic/13.png)
+After the installation is completed, press the icon of the App, click on "Application Information", in the "Permissions" column, change the permissions for "Documents and Media" to "Allow all files to be managed", and any hint will click "Permit".Finally, "Documents and Media" appears in the "Allowed" column.
 
-我们这个案例不存在上述情况，所以先学习一下全量恢复的方法。在`/sdcard/ooxx/com.yunmai.valueoflife`目录下，执行：
 
-```
-$ cat *classlist* >> whitelist.txt
-```
+> Of course, some apps do not have the permission to apply for documents and media, and de-shell ROM has already dealt with this point.When you install the app, you will apply for this permission, so don't worry about it.
 
-不放心可以看下`whitelist.txt`中是否已经填满了函数类方法名。
 
-打开`logcat`，稍微等一会儿，就可以看到日志中出现`fart`的日志。这时候就是在`dump`类的函数体文件。
+Then click on Open the App, so that the entire shell is done.Adb enters the phone, and you can see the entiredex file that has been removed at different times, and the class list of txt files.
 
-```
-ActivityThread: sleep over and start fart
-ActivityThread: try loadClass class:XI.CA.XI.K0$XI
-ActivityThread: try loadClass class:XI.CA.XI.XI
-```
 
-![](pic/14.png)
+``` $ cd /sdcard/ooxx/com.yunmai.valueoflife $ ls `` ''
 
-可以多次用`ls -alit`命令查看最新生成的bin文件。
 
-![](pic/15.png)
+[] (pic/08.png)
 
-dump过程可以持续数分钟至数小时，直至`logcat`中出现`fart run over`字样即dump结束，然后将文件夹整体拖到电脑上。
 
-```
-% adb pull /sdcard/ooxx/com.yunmai.valueoflife
-```
+The four main function names registered in AndroidManifest.xml can be searched directly in the folder, which are generally not to be confused.For example, `com.yunmai.valueoflife.MainActivity`.
 
-#### 重组dex
 
-由于新工具的发布，重组dex变得异常简单，一句命令即可：
+[] (pic/09.png)
 
-```
-% java -jar repireall.jar com.yunmai.valueoflife
-```
 
-![](pic/16.png)
+The command used is as follows:
 
->当然电脑上要提前安装好JDK环境这肯定是必须的。
 
-重组需要一定的时间，工具会自动使用bin文件中的函数体来填入对应的dex文件，重组完成的提示是：`Repire all dexfile end!Please enjoy!`
+"` $ grep -ril "MainActivity" * ```
 
-重组完成会同目录下生成`repire`文件夹，内含所有修复好的dex文件。比如我们再看之前缺少函数体的那个dex试试看，就是这样的效果，函数体的业务逻辑已经一览无余。
 
-![](pic/17.png)
+[] (pic/10.png)
 
-另外，大家也会有疑问，dex、LoadMethod、OpenCommen三个文件有什么区别呢？
 
-![](pic/18.png)
+If the class we're looking for exists in the `8461968_classlist_LoadMethod.txt` file, then you drag it to the computer and open a countercompilation.It was found that most class names and method names were confused.
 
-其实他们是在不同的脱壳时机dump下来的整体dex文件，前文也解释了有一些情况会dump下来畸形的dex。所以提供更多的时机，可以有更高的容错，which means：总有一个是对的。
 
-#### 重组dex之在手机上使用FartFix
+[] (pic/11.png)
 
-热心网友将上述修复工具做成了一个App，叫做FartFix，可以在手机上直接进行修复，不用拖到电脑上修复，免去电脑上安装Java环境之苦。界面如下：
 
-![](pic/19.png)
+Switching to the small tab, you can see the methods are alsonop, which is a typical extracting shell characteristic, can not see the actual logical process of the method.
 
-上述主动调用dump函数体的过程结束之后，点击App打开，按要求赋予文件夹读写管理权限，输入要修复的dex所在的路径后，点击开始处理。
 
-```
-% adb shell input text /sdcard/ooxx/com.yunmai.valueoflife
-```
+[] (pic/12.png)
 
-该App制作的比较简陋，全程没有任何提示，包括logcat里也没有。稍微多等一会儿，可以发现在`/sdcard/ooxx/repire`目录下，已经生成了修复完成的dex，如图所示。
 
-![](pic/20.png)
+The next step is to solve the problem of extracting the shell and restore the function body.
 
-接下来即可拖到电脑上进行分析。
 
-### 壳的检测机制的绕过
+♪ ♪ Take off the shell again ♪
 
-上文说到壳有一些方法来检测与对抗Fart12的主动调用，相应的我们也有一些方法，来绕过这些检测。主要有两种方法：
 
-1. 缩小范围。比如只向`whitelist.txt`里写入几个、几十个、几百个类名，只脱自己想看的那些类。壳绝无可能阻止业务代码的加载，否则App本身就会崩溃。或者只处理一个dex里面的所有类：
+Dump the shell, using the method of loading the class and then dump the function to the bin file.Finally, the functions in the bin file are filled back into thedex, and the completedex file is formed, so that the logic of the methods in the diagram above is restored.
 
-```
-$ cp 8461968_classlist.txt whitelist.txt
-```
 
-2. 跳过检测类。`logcat`的日志里本身是可以看到崩溃发生时尝试加载的类名的，绕过那个类即可。可以从`whitelist.txt`中删掉那个类即可。清空其余全部文件，然后点击App重来一遍。
+And in the decoupled program, the white list 'Whitelist' mode is selected.Why don't you take it all out right now?This is reasonable, for three reasons:
+
+
+1. Some apps are relatively large, tens of thousands and tens of millions of types of methods, full recovery is time-consuming, the system cannot support will kill the application or collapse itself.
+
+
+2. Some shells will write some `App` unnecessary junk categories, write some exit code in the junk category, these junk classes will never be loaded in the normal usage process of the app, in which case if Fart12 loads it, stumbles on the mine, the app crashes out.
+
+
+Some shells also hook functions in Art's class loading process to detect which classes are being loaded, such as LoadMethod or LinkCode, and withdraw when the class list is discovered, preventing subsequent actively loaded class methods from occurring.
+
+
+[] (pic/13.png)
+
+
+In our case, the above situation does not exist, so first learn how to fully recover.In the `/sdcard/ooxx/com.yunmai.valueoflife` directory, execute:
+
+
+``` $ cat *classlist* >> whitelist.txt `` ''
+
+
+Do not rest assured to see if the function class name has been filled in in 'whitelist.txt'.
+
+
+Open 'logcat' and wait a little while to see the log of 'fart' appearing in the log.This is the function file in the `dump` class.
+
+
+``` ActivityThread: sleep over and start fartCA.XI.K0$XI ActivityThread: try loadCA.XI.XI
+
+
+[] (pic/14.png)
+
+
+The latest generated bin file can be viewed several times with the `ls-alit` command.
+
+
+[] (pic/15.png)
+
+
+The dump process can last for minutes to hours, until the word 'fart run over' appears in 'logcat', and the entire folder is dragged to the computer.
+
+
+``` %adb pull /sdcard/ooxx/com.yunmai.valueoflife `` ''
+
+
+### Reorganizedex
+
+
+With the release of the new tool, the reorganization ofdex has become unusually simple, with a single command:
+
+
+`` '' %java -jar repireall.jar com.yunmai.valueoflife '' ''
+
+
+[] (pic/16.png)
+
+
+> Of course it is necessary to install the JDK environment in advance on the computer.
+
+
+The restructuring takes some time, and the tool will automatically use the functions in the bin file to fill in the correspondingdex file, the tip to restructure is:`Repire all dexfile end!Please enjoy!`
+
+
+Reorganization completion generates the `repire` folder under the directory, containing all repaireddex files.For example, we have seen before the missing function, that is the effect, the function's operating logic has a complete overview.
+
+
+[] (pic/17.png)
+
+
+In addition, you will also be wondering, what is the difference between the three documentsdex,LoadMethod,OpenCommen?
+
+
+[] (pic/18.png)
+
+
+In fact, they are in different decoy times dumping down the entiredex file, the preamble also explains some cases that will dump down the deformeddex.So give more time to have a higher tolerance of error, which means: always one is right.
+
+
+### Reorganizedex on your phone using FartFix
+
+
+The enthusiastic netizens made the above repair tool into an app, called FartFix, can be repaired directly on the phone, without dragging to the computer to repair, to avoid the pain of installing Java environment on the computer.The interface is as follows:
+
+
+[] (pic/19.png)
+
+
+After the process of actively invoking the dump function is completed, click on the App open, give the folder read-write management permission as requested, enter the path where thedex is to be repaired, and click on start processing.
+
+
+``` %adb shell input text /sdcard/ooxx/com.yunmai.valueoflife `` ''
+
+
+The app is relatively simple, with no hints throughout, not even in the logcat.A little more than a moment, you can find that the fixeddex has been generated in the `/sdcard/ooxx/repire` directory, as shown in the figure.
+
+
+[] (pic/20.png)
+
+
+It can then be dragged to the computer for analysis.
+
+
+# # The circumvention of the detection mechanism of the shell
+
+
+Speaking of Shell above, there are some methods to detect and counter Fart12 active calls, and accordingly we have some ways to bypass these tests.There are two main approaches:
+
+
+1. The scope is narrowed.For example, just write a few, dozens, hundreds of category names in the `whitelist.txt`, only those you want to see.Shell has no chance of blocking the loading of business code, otherwise the app itself will collapse.Or just handle all the classes in onedex:
+
+
+``` $ cp 8461968_classlist.txt whitelist. txt `` ''
+
+
+2. Skip the detection class.In the logcat log itself, you can see the name of the category you try to load when the crash occurs, bypassing that category.The class can be deleted from 'whitelist.txt'.Empty all the remaining files, and then click App again.
+
